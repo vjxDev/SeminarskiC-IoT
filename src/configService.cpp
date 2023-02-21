@@ -38,14 +38,12 @@ int SharedData::config_load()
 	}
 
 	DynamicJsonDocument doc(300);
-
 	if (deserializeJson(doc, file))
 	{
 		Serial.print(F("deserializeJson() failed with code"));
 	}
 	else
 	{
-
 		strncpy(SharedData::ssid, doc["ssid"] | "", DATA_SSID_LEN);
 		strncpy(SharedData::password, doc["password"] | "", DATA_PASSWORD_LEN);
 	}

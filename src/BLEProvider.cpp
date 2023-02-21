@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <MyBLEservice.h>
+#include <BLEProvider.h>
 #include <BLEDevice.h>
 #include <configService.h>
 
@@ -66,11 +66,12 @@ class BLECharCallBacks : public BLECharacteristicCallbacks
 	}
 };
 
+BLEService *pServiceWifi;
+BLECharacteristic *pCharWifiPassword;
+BLECharacteristic *pCharWifiSSID;
+
 void start_server()
 {
-	BLEService *pServiceWifi;
-	BLECharacteristic *pCharWifiPassword;
-	BLECharacteristic *pCharWifiSSID;
 
 	BLEDevice::init("ESP32 BLE Server");
 
@@ -91,7 +92,7 @@ void start_server()
 	pCharWifiPassword->setCallbacks(new BLECharCallBacks());
 	pCharWifiPassword->setValue(SharedData::password);
 
-		pServiceWifi->start();
+	pServiceWifi->start();
 
 	// Pre nego što se počne emitovati BLE signal, potrebno je da se uključi i BLE advertising
 	// On u sebi sadrži ime, SSID i informacije o odbranim UUID-ovima servisa ⤵️

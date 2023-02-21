@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <MyBLEservice.h>
+#include <BLEProvider.h>
 #include <configService.h>
 #include <WiFi.h>
 
@@ -33,6 +33,4 @@ void loop()
 		Serial.println("Connected!");
 	}
 	delay(5000);
-
-	// put your main code here, to run repeatedly:
 }
