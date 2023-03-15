@@ -1,0 +1,3 @@
+[submodule "lib/SerialBuf"]
+	path = lib/SerialBuf
+	url = https://github.com/djherceg/serialBuf.git

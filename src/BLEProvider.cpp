@@ -1,105 +1,104 @@
 #include <Arduino.h>
-#include <BLEProvider.h>
 #include <BLEDevice.h>
-#include <configService.h>
+#include <BLEProvider.h>
+#include <DataService.h>
 
-// init BLE
-
-BLEServer *pServer = NULL;
-BLEService *pService = NULL;
-BLECharacteristic *pCharacteristic = NULL;
+BLEServer *pServer = nullptr;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
-uint8_t value = 0;
 
-#define UUID_SERVICE_WIFI "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define UUID_WIFI_SSID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-#define UUID_WIFI_PASSWORD "beb5483e-36e1-4688-b7f5-ea07361b26a9"
+class BLECharCallBacks : public BLECharacteristicCallbacks {
+    void onRead(BLECharacteristic *pCharacteristic) {
+    }
+    void onWrite(BLECharacteristic *pCharacteristic) {
+        char uuid[37] = {};
+        char comand[512] = {};
+        strcpy(uuid, pCharacteristic->getUUID().toString().c_str());
+        strcpy(comand, pCharacteristic->getValue().c_str());
 
-class MyServerCallbacks : public BLEServerCallbacks
-{
-	void onConnect(BLEServer *pServer)
-	{
-		deviceConnected = true;
-	}
-
-	void onDisconnect(BLEServer *pServer)
-	{
-		deviceConnected = false;
-	}
+        int error = DataService::processCommand(uuid, comand);
+        if (error == CMD_ERR_UNKNOWNCOMMAND) {
+            Serial.println("Unknown command");
+        }
+    }
 };
 
-class BLECharCallBacks : public BLECharacteristicCallbacks
-{
-	void onRead(BLECharacteristic *pCharacteristic)
-	{
-	}
-	void onWrite(BLECharacteristic *pCharacteristic)
-	{
-		if (pCharacteristic->getUUID().equals(BLEUUID(UUID_WIFI_PASSWORD)))
-		{
-			Serial.println("Password");
-			// get the value and save it to SharedData
-			std::string value = pCharacteristic->getValue();
-			if (value.length() > 0)
-			{
-				SharedData::set_password((char *)value.c_str());
-				SharedData::config_save();
-			}
-		}
-		else if (pCharacteristic->getUUID().equals(BLEUUID(UUID_WIFI_SSID)))
-		{
-			// get the value and save it to SharedData
-			Serial.println("SSID");
+class MyServerCallbacks : public BLEServerCallbacks {
+    void onConnect(BLEServer *pServer) {
+        deviceConnected = true;
+    }
 
-			std::string value = pCharacteristic->getValue();
-			if (value.length() > 0)
-			{
-				SharedData::set_ssid((char *)value.c_str());
-				SharedData::config_save();
-			}
-		}
-		else
-		{
-			Serial.println("Unknown");
-		}
-	}
+    void onDisconnect(BLEServer *pServer) {
+        deviceConnected = false;
+    }
 };
 
-BLEService *pServiceWifi;
-BLECharacteristic *pCharWifiPassword;
-BLECharacteristic *pCharWifiSSID;
+class BLEChar {
+   public:
+    BLECharacteristic *charac = nullptr;
+    char uuid[37] = {};
+};
 
-void start_server()
-{
+class BLEServ {
+   public:
+    BLEService *service;
+    char uuid[37] = {};
+    BLEChar chars[10] = {};
+    int count = 0;
+    int max;
 
-	BLEDevice::init("ESP32 BLE Server");
+    void init(char *uuid, int max) {
+        this->max = max;
+        strcpy(this->uuid, uuid);
+        service = pServer->createService(BLEUUID(uuid));
+    }
 
-	pServer = BLEDevice::createServer();
-	pServer->setCallbacks(new MyServerCallbacks());
+    void addChar(char *uuid) {
+        if (count < max) {
+            BLEChar *ch = &chars[count];
+            strcpy(ch->uuid, uuid);
+            ch->charac = service->createCharacteristic(uuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+            ch->charac->setCallbacks(new BLECharCallBacks());
+            count++;
+        }
+    }
+    void setValue(char *uuid, char *value) {
+        for (int i = 0; i < count; i++) {
+            if (strcmp(chars[i].uuid, uuid) == 0) {
+                chars[i].charac->setValue(value);
+                return;
+            }
+        }
+    }
+};
+BLEServ service;
 
-	pServiceWifi = pServer->createService(UUID_SERVICE_WIFI);
+void BLEProvider::init() {
+    BLEDevice::init("ESP32 BLE Server");
 
-	pCharWifiSSID = pServiceWifi->createCharacteristic(
-		UUID_WIFI_SSID,
-		BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_READ);
-	pCharWifiSSID->setCallbacks(new BLECharCallBacks());
-	pCharWifiSSID->setValue(SharedData::ssid);
+    pServer = BLEDevice::createServer();
+    pServer->setCallbacks(new MyServerCallbacks());
 
-	pCharWifiPassword = pServiceWifi->createCharacteristic(
-		UUID_WIFI_PASSWORD,
-		BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_READ);
-	pCharWifiPassword->setCallbacks(new BLECharCallBacks());
-	pCharWifiPassword->setValue(SharedData::password);
+    service.init(UUID_SERVICE_WIFI, 10);
 
-	pServiceWifi->start();
+    BLEAdvertising *pAdvertising = pServer->getAdvertising();
+    pAdvertising->addServiceUUID(UUID_SERVICE_WIFI);
+    pAdvertising->setScanResponse(true);
+    pAdvertising->setMinPreferred(0x06);  // rešenje za iPhone korisnike
+    pAdvertising->setMinPreferred(0x12);
+    BLEDevice::startAdvertising();
+}
 
-	// Pre nego što se počne emitovati BLE signal, potrebno je da se uključi i BLE advertising
-	// On u sebi sadrži ime, SSID i informacije o odbranim UUID-ovima servisa ⤵️
-	BLEAdvertising *pAdvertising = pServer->getAdvertising();
-	pAdvertising->addServiceUUID(UUID_SERVICE_WIFI);
-	pAdvertising->setScanResponse(true);
-	pAdvertising->setMinPreferred(0x06); // rešenje za iPhone korisnike
-	pAdvertising->setMinPreferred(0x12);
-	BLEDevice::startAdvertising();
+void BLEProvider::addCharacteristic(char *uuid) {
+    service.addChar(uuid);
+}
+void BLEProvider::setValue(char *uuid, char *value) {
+    service.setValue(uuid, value);
+}
+void BLEProvider::turnOnService() {
+    service.service->start();
+}
+
+void BLEProvider::turnOff() {
+    BLEDevice::deinit(true);
 }
