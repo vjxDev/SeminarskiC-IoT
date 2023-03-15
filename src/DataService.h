@@ -26,6 +26,7 @@ class DataService {
     static void init(int (*save)(DynamicJsonDocument *doc), int (*load)(DynamicJsonDocument *doc), int comandCount = 10);
     static int save();
     static int load();
+    static int printConfig();
 
     static int processCommand(char *s);
     static int processCommand(char *uuid, char *s);

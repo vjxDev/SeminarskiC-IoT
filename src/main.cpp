@@ -62,9 +62,15 @@ int comandSaveBoolenToDataService(char *s) {
     return -1;
 }
 
-int callSave(char *s) {
-    // write a function that will take the  *char s and give it to the data service
-    return DataService::save();
+int configCallBack(char *s) {
+    if (strcmp(s, "save") == 0) {
+        DataService::save();
+        return 0;
+    } else if (strcmp(s, "load") == 0) {
+        DataService::load();
+        return 0;
+    }
+    return DataService::printConfig();
 }
 
 void setup() {
@@ -79,7 +85,7 @@ void setup() {
 
     DataService::addCommand(UUID_WIFI_SSID, comandWiFiCallback, true);
     DataService::addCommand("hello", comandHelloCallback);
-    DataService::addCommand("save", callSave);
+    DataService::addCommand("config", configCallBack);
     DataService::addCommand("testBool", comandSaveBoolenToDataService);
 
     Serial.println("DataService::addCommand");

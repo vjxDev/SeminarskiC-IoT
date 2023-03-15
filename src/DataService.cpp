@@ -45,7 +45,7 @@ int DataService::load() {
         return CONFIG_FILE_LOAD_ERROR;
     }
 
-    DynamicJsonDocument doc(300);
+    DynamicJsonDocument doc(3000);
     if (deserializeJson(doc, file)) {
         Serial.print(F("deserializeJson() failed with code"));
     } else {
@@ -71,7 +71,7 @@ int DataService::save() {
         Serial.println("Failed to open config file for writing");
         return CONFIG_FILE_SAVE_ERROR;
     }
-    DynamicJsonDocument doc(30000);
+    DynamicJsonDocument doc(3000);
 
     // All the data that will be saved to the file
     saveCallback(&doc);
@@ -84,6 +84,35 @@ int DataService::save() {
     String output;
     serializeJson(doc, output);
     Serial.println(output);
+
+    return 0;
+}
+
+int DataService::printConfig() {
+    if (!SPIFFS.begin(true)) {
+        Serial.println("Failed to mount file system");
+        return SPIFFS_MOUNT_ERROR;
+    }
+
+    File file = SPIFFS.open("/config.json");
+
+    if (!file || (file.size() == 0)) {
+        Serial.println("Failed to open config file for writing");
+        return CONFIG_FILE_LOAD_ERROR;
+    }
+
+    DynamicJsonDocument doc(3000);
+    if (deserializeJson(doc, file)) {
+        Serial.print(F("deserializeJson() failed with code"));
+    } else {
+        // all the data that needs to be loaded from the file
+        String output;
+        serializeJson(doc, output);
+        Serial.println(output);
+    }
+
+    // close file
+    file.close();
 
     return 0;
 }
