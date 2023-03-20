@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <BLEProvider.h>
+#include <CommandService.h>
 #include <DataService.h>
 #include <WiFi.h>
 // #define BLUETOOTH_SERIAL_IS_NEEADED
@@ -18,15 +19,12 @@ int saveCallback(DynamicJsonDocument *doc) {
     (*doc)["testInt"] = DataService::testInt;
     (*doc)["testFloat"] = DataService::testFloat;
     (*doc)["dataTest"] = DataService::dataTest;
-    // (*doc)["testByteArray"] = DataService::testByteArray.buffer;
     return 0;
 }
 
 int loadCallback(DynamicJsonDocument *doc) {
-    // all the data that needs to be loaded from the file
     strncpy(DataService::ssid, (*doc)["ssid"], DATA_SSID_LEN);
     strncpy(DataService::password, (*doc)["password"], DATA_PASSWORD_LEN);
-    // DataService::testByteArray.copyfrom((*doc)["testByteArray"], (*doc)["testByteArray"].size(), 0);
     DataService::testBool = (*doc)["testBool"];
     DataService::testInt = (*doc)["testInt"];
     DataService::testFloat = (*doc)["testFloat"];
@@ -84,9 +82,6 @@ void setup() {
     Serial.println("SerialProvider::init");
 
     DataService::addCommand(UUID_WIFI_SSID, comandWiFiCallback, true);
-    DataService::addCommand("hello", comandHelloCallback);
-    DataService::addCommand("config", configCallBack);
-    DataService::addCommand("testBool", comandSaveBoolenToDataService);
 
     Serial.println("DataService::addCommand");
     BLEProvider::turnOnService();
