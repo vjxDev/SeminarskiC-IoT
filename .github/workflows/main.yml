@@ -1,3 +1,5 @@
+name: CI
+
 on:
   push:
     branches: [ main ]
@@ -28,4 +30,4 @@ jobs:
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: "./web/dist/public"
+          path: "./web/dist/public/"
