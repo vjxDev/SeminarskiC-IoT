@@ -84,6 +84,7 @@ export async function disconnect() {
 		await BLEStore.server?.disconnect();
 		resetState();
 	} catch (error) {
+		console.log(error);
 
 	}
 }
