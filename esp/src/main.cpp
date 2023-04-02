@@ -3,103 +3,68 @@
 #include <BLEProvider.h>
 #include <CommandService.h>
 #include <DataService.h>
-#include <WiFi.h>
-// #define BLUETOOTH_SERIAL_IS_NEEADED
 #include <SerialProvider.h>
-// #include <serialbuf.h>
+#include <WiFi.h>
 
-// BluetoothSerial ESP_BT;
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-// create a callback function for the command that will proces the wifi ssid. It needs to set the dataservice ssid
+TaskHandle_t serialCheckTask = NULL;
+TaskHandle_t bleCoonectionCheckTask = NULL;
+
+void serialCheck(void *pvParameters) {
+    for (;;) {
+        SerialProvider::checkSerial();
+        vTaskDelay(1);
+    }
+}
+
+void bleCoonectionCheck(void *pvParameters) {
+    for (;;) {
+        BLEProvider::loop();
+        vTaskDelay(1);
+    }
+}
 
 int saveCallback(DynamicJsonDocument *doc) {
     (*doc)["ssid"] = DataService::ssid;
     (*doc)["password"] = DataService::password;
-    (*doc)["testBool"] = DataService::testBool;
-    (*doc)["testInt"] = DataService::testInt;
-    (*doc)["testFloat"] = DataService::testFloat;
-    (*doc)["dataTest"] = DataService::dataTest;
+
     return 0;
 }
 
 int loadCallback(DynamicJsonDocument *doc) {
-    strncpy(DataService::ssid, (*doc)["ssid"], DATA_SSID_LEN);
-    strncpy(DataService::password, (*doc)["password"], DATA_PASSWORD_LEN);
-    DataService::testBool = (*doc)["testBool"];
-    DataService::testInt = (*doc)["testInt"];
-    DataService::testFloat = (*doc)["testFloat"];
-    DataService::dataTest = (*doc)["dataTest"];
+    char ssid[DATA_SSID_LEN];
+    char password[DATA_PASSWORD_LEN];
+
+    strncpy(ssid, (*doc)["ssid"], DATA_SSID_LEN);
+    strncpy(password, (*doc)["password"], DATA_PASSWORD_LEN);
+
+    DataService::setSsid(ssid);
+    DataService::setPassword(password);
 
     return 0;
-}
-
-int comandWiFiCallback(char *s) {
-    Serial.println(s);
-    strncpy(DataService::ssid, s, DATA_SSID_LEN);
-    return 0;
-}
-int comandHelloCallback(char *s) {
-    Serial.println("hi");
-    return 0;
-}
-int comandSaveBoolenToDataService(char *s) {
-    // write a function that will take the  *char s and give it to the data service
-    bool yes = strcmp(s, "true") == 0;
-    bool no = strcmp(s, "false") == 0;
-    if (yes || no) {
-        if (yes) {
-            DataService::testBool = true;
-        } else {
-            DataService::testBool = false;
-        }
-        return 0;
-    }
-
-    Serial.println("Error: not a boolean");
-
-    return -1;
-}
-
-int configCallBack(char *s) {
-    if (strcmp(s, "save") == 0) {
-        DataService::save();
-        return 0;
-    } else if (strcmp(s, "load") == 0) {
-        DataService::load();
-        return 0;
-    }
-    return DataService::printConfig();
 }
 
 void setup() {
     Serial.begin(115200);
-    Serial.println("setup");
     DataService::init(saveCallback, loadCallback, 15);
-    Serial.println("DataService::init");
     BLEProvider::init();
-    Serial.println("BLEProvider::init");
     SerialProvider::init();
-    Serial.println("SerialProvider::init");
-
-    DataService::addCommand(UUID_WIFI_SSID, comandWiFiCallback, true);
-
-    Serial.println("DataService::addCommand");
+    registerCMDComands();
     BLEProvider::turnOnService();
-    Serial.println("BLEProvider::start");
 
     DataService::load();
-    Serial.println("DataService::load");
-    Serial.println(ESP.getMaxAllocHeap());
 
-    // delay(10000);
+    delay(5000);
+    BLEProvider::setValue(UUID_WIFI_SSID, "test");
+    Serial.println("WIFI SSID SET TO test");
 
-    // WiFi.mode(WIFI_STA);
-    // WiFi.begin(DataService::ssid, DataService::password);
+    xTaskCreatePinnedToCore(serialCheck, "serialCheck", 10000, NULL, 1, &serialCheckTask, 0);
+    xTaskCreatePinnedToCore(bleCoonectionCheck, "bleCoonectionCheck", 10000, NULL, 1, &bleCoonectionCheckTask, 0);
 }
 
 void loop() {
-    SerialProvider::checkSerial();
-
     // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
     //     WiFi.disconnect();
     //     WiFi.begin(DataService::ssid, DataService::password);

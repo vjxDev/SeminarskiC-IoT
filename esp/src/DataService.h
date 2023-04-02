@@ -12,12 +12,10 @@ class DataService {
     // Global data
     static char ssid[DATA_SSID_LEN];
     static char password[DATA_PASSWORD_LEN];
-    static bool testBool;
-    static int testInt;
-    static float testFloat;
-    static ByteArray testByteArray;
-    static int dataTest;
+
     //
+    static bool setSsid(char *s);
+    static bool setPassword(char *s);
 
     // create a static method that will accept a callback function with propery DynamicJsonDocument doc
     static int (*saveCallback)(DynamicJsonDocument *doc);

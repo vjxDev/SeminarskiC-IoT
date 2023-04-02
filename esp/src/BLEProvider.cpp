@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <BLE2902.h>
 #include <BLEDevice.h>
 #include <BLEProvider.h>
 #include <DataService.h>
@@ -57,7 +58,8 @@ class BLEServ {
         if (count < max) {
             BLEChar *ch = &chars[count];
             strcpy(ch->uuid, uuid);
-            ch->charac = service->createCharacteristic(uuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+            ch->charac = service->createCharacteristic(uuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_INDICATE);
+            ch->charac->addDescriptor(new BLE2902());
             ch->charac->setCallbacks(new BLECharCallBacks());
             count++;
         }
@@ -66,6 +68,7 @@ class BLEServ {
         for (int i = 0; i < count; i++) {
             if (strcmp(chars[i].uuid, uuid) == 0) {
                 chars[i].charac->setValue(value);
+                chars[i].charac->notify();
                 return;
             }
         }
@@ -101,4 +104,23 @@ void BLEProvider::turnOnService() {
 
 void BLEProvider::turnOff() {
     BLEDevice::deinit(true);
+}
+
+void BLEProvider::loop() {
+    // disconnecting event
+
+    if (deviceConnected) {
+    }
+
+    if (!deviceConnected && oldDeviceConnected) {
+        delay(500);                   // give the bluetooth stack the chance to get things ready
+        pServer->startAdvertising();  // restart advertising
+        Serial.println("start advertising");
+        oldDeviceConnected = deviceConnected;
+    }
+    // connect event
+    if (deviceConnected && !oldDeviceConnected) {
+        // do stuff here on connecting
+        oldDeviceConnected = deviceConnected;
+    }
 }

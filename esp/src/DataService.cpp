@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <BLeProvider.h>
 #include <SPIFFS.h>
 
 CmdProc::ComandProcesor cmd_proc = CmdProc::ComandProcesor();
@@ -13,11 +14,24 @@ CmdProc::ComandProcesor cmd_proc = CmdProc::ComandProcesor();
 
 char DataService::ssid[DATA_SSID_LEN];
 char DataService::password[DATA_PASSWORD_LEN];
-bool DataService::testBool;
-int DataService::testInt;
-float DataService::testFloat;
-int DataService::dataTest;
-ByteArray DataService::testByteArray = ByteArray(512);
+
+bool DataService::setSsid(char *s) {
+    if (strlen(s) > DATA_SSID_LEN) {
+        return false;
+    }
+    strncpy(DataService::ssid, s, DATA_SSID_LEN);
+    BLEProvider::setValue(UUID_WIFI_SSID, s);
+    return true;
+}
+
+bool DataService::setPassword(char *s) {
+    if (strlen(s) > DATA_PASSWORD_LEN) {
+        return false;
+    }
+    strncpy(DataService::password, s, DATA_PASSWORD_LEN);
+    BLEProvider::setValue(UUID_WIFI_PASSWORD, s);
+    return true;
+}
 
 int (*DataService::saveCallback)(DynamicJsonDocument *doc);
 int (*DataService::loadCallback)(DynamicJsonDocument *doc);
