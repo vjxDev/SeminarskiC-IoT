@@ -1,6 +1,6 @@
 #include <ByteArray.h>
-#include <DataService.h>
-#include <SerialProvider.h>
+#include <mylib/CommandService.h>
+#include <mylib/SerialProvider.h>
 #include <serialbuf.h>
 
 #ifdef BLUETOOTH_SERIAL_IS_NEEADED
@@ -29,6 +29,8 @@ void SerialProvider::init(bool isBle) {
     isBluetoothSerialStarted = isBle;
     if (isBluetoothSerialStarted) {
         SerialProvider::startBluetoothSerial();
+    } else {
+        Serial.begin(115200);
     }
 }
 
@@ -52,7 +54,7 @@ void SerialProvider::checkSerial() {
 }
 
 void SerialProvider::proces(char *s) {
-    DataService::processCommand(s);
+    CommandService::process(s);
 }
 
 void SerialProvider::startBluetoothSerial() {

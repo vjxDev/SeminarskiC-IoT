@@ -1,52 +1,29 @@
-#include "DataService.h"
+#include "StorageProvider.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <BLeProvider.h>
 #include <SPIFFS.h>
-
-CmdProc::ComandProcesor cmd_proc = CmdProc::ComandProcesor();
+#include <mylib/BLEProvider.h>
 
 #define SPIFFS_MOUNT_ERROR -21
 #define CONFIG_FILE_LOAD_ERROR -31
 #define CONFIG_FILE_SAVE_ERROR -32
 #define CONFIG_FILE_SERIALIZE_ERROR -41
 
-char DataService::ssid[DATA_SSID_LEN];
-char DataService::password[DATA_PASSWORD_LEN];
+//
 
-bool DataService::setSsid(char *s) {
-    if (strlen(s) > DATA_SSID_LEN) {
-        return false;
-    }
-    strncpy(DataService::ssid, s, DATA_SSID_LEN);
-    BLEProvider::setValue(UUID_WIFI_SSID, s);
-    return true;
+//
+
+int (*StorageProvider::saveCallback)(DynamicJsonDocument *doc);
+int (*StorageProvider::loadCallback)(DynamicJsonDocument *doc);
+
+void StorageProvider::init(int (*save)(DynamicJsonDocument *doc), int (*load)(DynamicJsonDocument *doc)) {
+    StorageProvider::saveCallback = save;
+    StorageProvider::loadCallback = load;
+    StorageProvider::load();
 }
 
-bool DataService::setPassword(char *s) {
-    if (strlen(s) > DATA_PASSWORD_LEN) {
-        return false;
-    }
-    strncpy(DataService::password, s, DATA_PASSWORD_LEN);
-    BLEProvider::setValue(UUID_WIFI_PASSWORD, s);
-    return true;
-}
-
-int (*DataService::saveCallback)(DynamicJsonDocument *doc);
-int (*DataService::loadCallback)(DynamicJsonDocument *doc);
-
-void DataService::init(int (*save)(DynamicJsonDocument *doc), int (*load)(DynamicJsonDocument *doc), int comandCount) {
-    cmd_proc.init(comandCount);
-    DataService::saveCallback = save;
-    DataService::loadCallback = load;
-}
-
-void DataService::addCommand(char *name, CmdProc::cmdCallback cbk, bool ble) {
-    cmd_proc.add(name, cbk, ble);
-}
-
-int DataService::load() {
+int StorageProvider::load() {
     if (!SPIFFS.begin(true)) {
         Serial.println("Failed to mount file system");
         return SPIFFS_MOUNT_ERROR;
@@ -73,7 +50,7 @@ int DataService::load() {
     return 0;
 }
 
-int DataService::save() {
+int StorageProvider::save() {
     if (!SPIFFS.begin(true)) {
         Serial.println("Failed to mount file system");
         return SPIFFS_MOUNT_ERROR;
@@ -102,7 +79,7 @@ int DataService::save() {
     return 0;
 }
 
-int DataService::printConfig() {
+int StorageProvider::printConfig() {
     if (!SPIFFS.begin(true)) {
         Serial.println("Failed to mount file system");
         return SPIFFS_MOUNT_ERROR;
@@ -129,15 +106,4 @@ int DataService::printConfig() {
     file.close();
 
     return 0;
-}
-
-int DataService::processCommand(char *command) {
-    Serial.println("DataService::processCommand");
-    Serial.println(command);
-    Serial.println("DataService::processCommand 2");
-
-    return cmd_proc.Execute(command);
-}
-int DataService::processCommand(char *command, char *uuid) {
-    return cmd_proc.Execute(command, uuid);
 }

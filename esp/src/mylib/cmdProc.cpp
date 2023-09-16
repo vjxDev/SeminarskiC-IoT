@@ -1,6 +1,6 @@
 #include "cmdProc.h"
 
-#include <BLEProvider.h>
+#include <mylib/BLEProvider.h>
 
 namespace CmdProc {
 void Comand::Set(char *cmdName, cmdCallback cbk, boolean ble) {
@@ -43,7 +43,7 @@ int ComandProcesor::Execute(char *s) {
         command[i] = s[i];
         i++;
     }
-    if (s[i] == '\0' || s[i+1]=='\0') {
+    if (s[i] == '\0' || s[i + 1] == '\0') {
         return Execute(command, "");
     }
     return Execute(command, s + i + 1);

@@ -1,7 +1,7 @@
 #ifndef __SERIALPROVIDER_H__
 #define __SERIALPROVIDER_H__
 
-#include <cmdProc.h>
+#include <mylib/cmdProc.h>
 
 class SerialProvider {
    public:

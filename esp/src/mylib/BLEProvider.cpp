@@ -1,8 +1,9 @@
 #include <Arduino.h>
 #include <BLE2902.h>
 #include <BLEDevice.h>
-#include <BLEProvider.h>
-#include <DataService.h>
+#include <mylib/BLEProvider.h>
+
+#include "mylib/CommandService.h"
 
 BLEServer *pServer = nullptr;
 bool deviceConnected = false;
@@ -17,7 +18,7 @@ class BLECharCallBacks : public BLECharacteristicCallbacks {
         strcpy(uuid, pCharacteristic->getUUID().toString().c_str());
         strcpy(comand, pCharacteristic->getValue().c_str());
 
-        int error = DataService::processCommand(uuid, comand);
+        int error = CommandService::process(uuid, comand);
         if (error == CMD_ERR_UNKNOWNCOMMAND) {
             Serial.println("Unknown command");
         }
@@ -74,7 +75,8 @@ class BLEServ {
         }
     }
 };
-BLEServ service;
+
+BLEServ mainService;
 
 void BLEProvider::init() {
     BLEDevice::init("ESP32 BLE Server");
@@ -82,7 +84,7 @@ void BLEProvider::init() {
     pServer = BLEDevice::createServer();
     pServer->setCallbacks(new MyServerCallbacks());
 
-    service.init(UUID_SERVICE_WIFI, 10);
+    mainService.init(UUID_SERVICE_WIFI, 10);
 
     BLEAdvertising *pAdvertising = pServer->getAdvertising();
     pAdvertising->addServiceUUID(UUID_SERVICE_WIFI);
@@ -93,13 +95,13 @@ void BLEProvider::init() {
 }
 
 void BLEProvider::addCharacteristic(char *uuid) {
-    service.addChar(uuid);
+    mainService.addChar(uuid);
 }
 void BLEProvider::setValue(char *uuid, char *value) {
-    service.setValue(uuid, value);
+    mainService.setValue(uuid, value);
 }
 void BLEProvider::turnOnService() {
-    service.service->start();
+    mainService.service->start();
 }
 
 void BLEProvider::turnOff() {
@@ -108,13 +110,13 @@ void BLEProvider::turnOff() {
 
 void BLEProvider::loop() {
     // disconnecting event
-
     if (deviceConnected) {
     }
 
+    // Connecting
     if (!deviceConnected && oldDeviceConnected) {
-        delay(500);                   // give the bluetooth stack the chance to get things ready
-        pServer->startAdvertising();  // restart advertising
+        delay(500);
+        pServer->startAdvertising();
         Serial.println("start advertising");
         oldDeviceConnected = deviceConnected;
     }
