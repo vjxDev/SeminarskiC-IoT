@@ -9,7 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-TaskHandle_t serialCheckTask = NULL;
+TaskHandle_t serialUpdateTask = NULL;
 TaskHandle_t bleCoonectionCheckTask = NULL;
 
 void serialCheck(void *pvParameters) {
@@ -30,27 +30,13 @@ void setup() {
     BLEProvider::init();
     SerialProvider::init();
 
-    // Add BLE and Serial comands before turning on bluetooth
     Commands::init();
-
-    BLEProvider::turnOnService();
-
     delay(5000);
 
-    // your code
-
-    xTaskCreatePinnedToCore(serialCheck, "serialCheck", 10000, NULL, 1, &serialCheckTask, 0);
+    xTaskCreatePinnedToCore(serialCheck, "serialCheck", 10000, NULL, 1, &serialUpdateTask, 0);
     xTaskCreatePinnedToCore(bleCoonectionCheck, "bleCoonectionCheck", 10000, NULL, 1, &bleCoonectionCheckTask, 0);
 }
 
 void loop() {
     Commands::loop();
-    // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    //     WiFi.disconnect();
-    //     WiFi.begin(DataService::ssid, DataService::password);
-    //     Serial.println("Connection Failed! Rebooting...");
-    // } else {
-    //     Serial.println("Connected!");
-    // }
-    // delay(5000);
 }

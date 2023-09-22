@@ -41,18 +41,21 @@ class BLEChar {
     char uuid[37] = {};
 };
 
+#define MAX_NUMBER_OF_CHARS 10
+#define NUMBER_OF_SERVICES 1
+
 class BLEServ {
    public:
     BLEService *service;
     char uuid[37] = {};
-    BLEChar chars[10] = {};
+    BLEChar chars[MAX_NUMBER_OF_CHARS] = {};
     int count = 0;
     int max;
 
     void init(char *uuid, int max) {
         this->max = max;
         strcpy(this->uuid, uuid);
-        service = pServer->createService(BLEUUID(uuid));
+        service = pServer->createService(BLEUUID(uuid), (MAX_NUMBER_OF_CHARS * 2 + NUMBER_OF_SERVICES + MAX_NUMBER_OF_CHARS));
     }
 
     void addChar(char *uuid) {
