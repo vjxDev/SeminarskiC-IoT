@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../web"
+		},
+		{
+			"path": "../esp"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.css": "css",
+			"*.tcc": "cpp",
+			"unordered_map": "cpp",
+			"fstream": "cpp",
+			"istream": "cpp",
+			"numeric": "cpp",
+			"ostream": "cpp",
+			"sstream": "cpp"
+		}
+	}
+}
