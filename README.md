@@ -38,9 +38,10 @@ Moje promene u konfiguraciji su:
 
 - `board_build.partitions` Promenjena je veličina particija za [OTA updates](https://docs.platformio.org/en/latest/platforms/espressif32.html#over-the-air-ota-update) i SPIFFS. [Lista mogućih konfiguracija](https://github.com/espressif/arduino-esp32/tree/master/tools/partitions)
 
-### Biblioteke 
+### Eksterne biblioteke 
 
 PlatfromIO je odgovoran za podešavanje i skidanje potrebnih biblioteka. Sva podešavanja se nalaze u UI-u i konfiguraciji.
+
 
 
 ## Web aplikacija
@@ -58,6 +59,28 @@ Aplikacija koristi [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/
 Kada se desi promena vresnosti neke GATT karakteristike, vrednosti se čuvaju u `BLEData` Solid.js prodavnici. Solid.js prodavnica nam omogućava da se svaka promena u vrednostima odmah vidi u UI, bez potrebe da ručno pišemo kod koji će da promeni UI.
 
 Sa  malo promena kod može da se koristi sa bilokojim web UI frameworkom, kao React.js ili Angular
+
+## ESP32 Kako rade biblioteke
+
+U `main.cpp` fajlu se nalazi osnovni kod potreban za pokretanje svega. `BLEProvider` i `SerialProvider` su biblioteke koje moraju da se inicijalizuju pre glavnog koga `setup()`. Takoće na kraju `setup()`  je potrebno kreirati task-ove koji će proveravati BLE i seriski port.
+
+### CommandService
+Kod je zamišljen tako da programer može da pravi *komande*. Komande mogu da budu BLE ili seriske. Za seriske potrebno je dati ime komenade, dok za BLE je potrebno dati UUID. U svakoj komandi se daje callback funkcija koja je odgovorna za procesovanja char[] koji je korisnik dao toj komandi seriski ili preko BLE.
+
+`CommandService` je odgovoran za organizaciju komandi. Na početku je potrebo reći koliko komandi može program da očekuje. Nakon toga programer može da `CommandService::add()` svoje BLE i seriske komande.
+
+> `BLEProvider::turnOnService()` mora da se pozove nak dodavanje svih BLE komandi.
+
+Progrmaer može da doda neke default vrednosti karakteristikama koje je definiso preko `BLEProvider::setValue(UUID, value);` nakon uključenje servisa. 
+
+### StorageProvider
+Je odgovoran za pamćenje i čitanje podataka iz SPFFS trajne memorije čipa. Bitno je da inicijalizuje `StorageProvider::init(saveCallback, loadCallback)` sa save i load funkcijama.
+
+
+## Tips 
+- Aplikacija [nRF Connect for Mobile](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp) može da olakša debugovanje ESP-a. Aplikacija pruža prikaz, ćitanje, pisanje i prikaz tahničnih detalja tokom rada sa BLE.
+
+
 
 ## Potencijalni probleami za ESP i WEB-app
 
