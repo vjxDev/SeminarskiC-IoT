@@ -2,6 +2,7 @@ import { createStore } from "solid-js/store";
 
 const serviceUUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 
+// All UUIDs
 export enum DATA_UUIDS {
   "WIFI_SSID" = "beb5483e-36e1-4688-b7f5-ea07361b26a8",
   "WIFI_PASSWORD" = "beb5483e-36e1-4688-b7f5-ea07361b26a9",
@@ -114,6 +115,8 @@ export async function connect() {
   setBLEStore("failed", false);
   let device: BluetoothDevice;
   let server: BluetoothRemoteGATTServer;
+
+  // Web browser popup
   try {
     device = await navigator.bluetooth.requestDevice({
       acceptAllDevices: true,
@@ -134,12 +137,14 @@ export async function connect() {
     return;
   }
 
-  setBLEStore("failed", false);
-  setBLEStore("connecting", false);
   setBLEStore("isConnected", true);
+  setBLEStore("connecting", false);
+  setBLEStore("failed", false);
+
   setBLEStore("device", device);
   setBLEStore("server", server);
 
+  // Read all services and characteristics
   try {
     let services = await server.getPrimaryServices();
     setBLEStore("services", services);
@@ -147,10 +152,11 @@ export async function connect() {
     let characteristics: BluetoothRemoteGATTCharacteristic[] = [];
     for (let i = 0; i < services.length; i++) {
       let chars = await services[i].getCharacteristics();
-      await delay(100);
+      await delay(100); // Windows and ESP need time to proces the mesage
       characteristics = [...characteristics, ...chars];
     }
 
+    // Enable notifications and set the handle value change callback
     for (let i = 0; i < characteristics.length; i++) {
       const c = characteristics[i];
       if (c.properties.notify) {
