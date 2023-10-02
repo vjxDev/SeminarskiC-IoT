@@ -28,9 +28,38 @@ U levom menu se sad nalazi sekcija za PlatformIo. Klikom na `Upload` se kompajli
 
 ![img](.github/assets/meni.png)
 
+### Framework i konfiguracija
+
+Kod je konfigurisan da koristi `arduino` framework. ESP32 može takođe da korsit `espressif` framework koji daje programeru punu kontorlu nad konfiguracijom i radom procesora, ali zato gubi mogućnost upotrebe `arduino` biblioteka. 
+
+Konfiguracija se nalazi u [platformio.ini](esp/platformio.ini). Može se menjati ručno u konfiguraciji ili preko PlatfromIO ekstenzije u UI-u.
+
+Moje promene u konfiguraciji su:
+
+- `board_build.partitions` Promenjena je veličina particija za [OTA updates](https://docs.platformio.org/en/latest/platforms/espressif32.html#over-the-air-ota-update) i SPIFFS. [Lista mogućih konfiguracija](https://github.com/espressif/arduino-esp32/tree/master/tools/partitions)
+
+### Biblioteke 
+
+PlatfromIO je odgovoran za podešavanje i skidanje potrebnih biblioteka. Sva podešavanja se nalaze u UI-u i konfiguraciji.
 
 
 ## Web aplikacija
 
 Web aplikacija se nalazi na [iot.f.jovica.me](https://iot.f.jovica.me)
-Nije nephodno lokalno pokretati sajt. Uputsvta se nalaze u [README.MD](web/README.md)
+Nije nephodno lokalno pokretati sajt. Uputsvta za pokretanje se nalze u [README.MD](web/README.md)
+
+### Kako radi aplikacije
+Za renderovanje UI-a se koristi [solid.js](https://www.solidjs.com/). 
+
+Aplikacija koristi [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API) za povezivanje i komunikaciju sa ESP-em odnosno bilikojim BLE uređajem. API koji pretraživač daje je prost, tako da nema potreba za importovanjem dodatnih biblioteka. Kod relevantan za rad sa BLE nalazi se u [BLEStore.tsx](src/store/BLEStore.tsx)
+
+`BLEStore.tsx` je napisan u Typescript-u, odnosno Javascript sa tipovina podataka. U fajlu se export-uju metode koje kontolišu konekciju `connect()`, `disconnect()`, `initBLE()`.
+
+Kada se desi promena vresnosti neke GATT karakteristike, vrednosti se čuvaju u `BLEData` Solid.js prodavnici. Solid.js prodavnica nam omogućava da se svaka promena u vrednostima odmah vidi u UI, bez potrebe da ručno pišemo kod koji će da promeni UI.
+
+Sa  malo promena kod može da se koristi sa bilokojim web UI frameworkom, kao React.js ili Angular
+
+## Potencijalni probleami za ESP i WEB-app
+
+- Zbog arduino framework-a nije moguće u isto vreme koristiti Bluetooth clasic i BLE/GATT. Bug unutar arduino framewroka.
+- Web aplikacija ne radi na IOS-u jer Apple ne podržava BLE API u WebKit. Dovodi do toga da ne radi ni u Chrome-u i u Safari-u.
